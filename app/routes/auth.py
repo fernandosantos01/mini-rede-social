@@ -51,7 +51,10 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             next_page = request.args.get('next')
-            return redirect(next_page or url_for('main.index'))
+            # Validate that next_page is safe (relative URL only)
+            if next_page and next_page.startswith('/') and not next_page.startswith('//'):
+                return redirect(next_page)
+            return redirect(url_for('main.index'))
         
         flash('Usuário ou senha inválidos', 'error')
     

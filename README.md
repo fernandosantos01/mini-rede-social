@@ -55,6 +55,11 @@ pip install -r requirements.txt
 
 5. Execute a aplicação:
 ```bash
+# Para desenvolvimento (com debug ativado)
+export FLASK_ENV=development
+python run.py
+
+# Para produção (sem debug)
 python run.py
 ```
 
