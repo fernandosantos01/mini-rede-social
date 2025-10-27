@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, current_user
+from urllib.parse import urlparse
 from app import db
 from app.models import User
 
@@ -51,10 +52,13 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             next_page = request.args.get('next')
-            # Validate that next_page is safe (relative URL only)
-            if next_page and next_page.startswith('/') and not next_page.startswith('//'):
-                return redirect(next_page)
-            return redirect(url_for('main.index'))
+            # Validate next_page is a safe relative URL
+            if next_page:
+                parsed = urlparse(next_page)
+                # Only allow relative URLs (no scheme, no netloc)
+                if parsed.netloc or parsed.scheme:
+                    next_page = None
+            return redirect(next_page if next_page else url_for('main.index'))
         
         flash('Usuário ou senha inválidos', 'error')
     
