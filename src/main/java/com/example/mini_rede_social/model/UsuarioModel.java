@@ -1,0 +1,31 @@
+package com.example.mini_rede_social.model;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.UUID;
+
+@Entity
+@Table(name = "usuarios")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class UsuarioModel {
+    @Id
+    @GeneratedValue
+    private UUID id;
+
+    @Column(unique = true, nullable = false, length = 20)
+    private String username;
+    @Column(unique = true, nullable = false, length = 20)
+    private String phone_number;
+    @Column(unique = true, nullable = false, length = 50)
+    private String email;
+    @Column(nullable = false)
+    private String password;
+
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
+    private PerfilModel perfil;
+}
