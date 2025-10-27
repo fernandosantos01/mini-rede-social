@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}{{ user.username }} - Mini Rede Social{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-info">
+            <h2>@{{ user.username }}</h2>
+            <p class="profile-email">{{ user.email }}</p>
+            {% if user.bio %}
+            <p class="profile-bio">{{ user.bio }}</p>
+            {% endif %}
+            <div class="profile-stats">
+                <span><strong>{{ user.posts.count() }}</strong> posts</span>
+                <span><strong>{{ user.followers.count() }}</strong> seguidores</span>
+                <span><strong>{{ user.followed.count() }}</strong> seguindo</span>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            {% if user == current_user %}
+                <a href="{{ url_for('main.edit_profile') }}" class="btn btn-secondary">Editar Perfil</a>
+            {% else %}
+                {% if current_user.is_following(user) %}
+                    <form method="POST" action="{{ url_for('main.unfollow', username=user.username) }}">
+                        <button type="submit" class="btn btn-secondary">Deixar de Seguir</button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{{ url_for('main.follow', username=user.username) }}">
+                        <button type="submit" class="btn btn-primary">Seguir</button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="posts">
+        <h3>Posts de {{ user.username }}</h3>
+        {% if posts %}
+            {% for post in posts %}
+            <div class="post">
+                <div class="post-header">
+                    <span class="post-author">@{{ post.author.username }}</span>
+                    <span class="post-date">{{ post.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                </div>
+                <div class="post-content">
+                    {{ post.content }}
+                </div>
+                {% if post.author == current_user %}
+                <div class="post-actions">
+                    <form method="POST" action="{{ url_for('main.delete_post', post_id=post.id) }}" style="display: inline;">
+                        <button type="submit" class="btn btn-danger btn-small" onclick="return confirm('Tem certeza que deseja deletar este post?')">Deletar</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p class="no-posts">Este usuário ainda não fez nenhum post.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

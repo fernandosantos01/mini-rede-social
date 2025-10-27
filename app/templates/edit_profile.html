@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Perfil - Mini Rede Social{% endblock %}
+
+{% block content %}
+<div class="edit-profile-container">
+    <h2>Editar Perfil</h2>
+    <form method="POST" action="{{ url_for('main.edit_profile') }}">
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="4">{{ current_user.bio or '' }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+        <a href="{{ url_for('main.profile', username=current_user.username) }}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

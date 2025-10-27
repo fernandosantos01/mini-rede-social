@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - Mini Rede Social{% endblock %}
+
+{% block content %}
+<div class="users-container">
+    <h2>Usuários</h2>
+    <div class="users-list">
+        {% for user in users %}
+        <div class="user-card">
+            <div class="user-info">
+                <h3><a href="{{ url_for('main.profile', username=user.username) }}">@{{ user.username }}</a></h3>
+                {% if user.bio %}
+                <p>{{ user.bio[:100] }}{% if user.bio|length > 100 %}...{% endif %}</p>
+                {% endif %}
+                <div class="user-stats">
+                    <span>{{ user.posts.count() }} posts</span>
+                    <span>{{ user.followers.count() }} seguidores</span>
+                </div>
+            </div>
+            <div class="user-actions">
+                {% if current_user.is_following(user) %}
+                    <form method="POST" action="{{ url_for('main.unfollow', username=user.username) }}">
+                        <button type="submit" class="btn btn-secondary btn-small">Deixar de Seguir</button>
+                    </form>
+                {% else %}
+                    <form method="POST" action="{{ url_for('main.follow', username=user.username) }}">
+                        <button type="submit" class="btn btn-primary btn-small">Seguir</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
