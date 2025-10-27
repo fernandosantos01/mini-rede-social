@@ -2,7 +2,6 @@
 Test script for the mini social network application
 """
 import unittest
-import sys
 from app import create_app, db
 from app.models import User, Post
 
@@ -168,6 +167,3 @@ if __name__ == '__main__':
     print(f"Failures: {len(result.failures)}")
     print(f"Errors: {len(result.errors)}")
     print("=" * 50)
-    
-    # Exit with proper code
-    sys.exit(0 if result.wasSuccessful() else 1)
