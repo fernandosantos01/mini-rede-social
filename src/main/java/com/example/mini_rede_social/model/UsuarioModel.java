@@ -17,6 +17,9 @@ public class UsuarioModel {
     @GeneratedValue
     private UUID id;
 
+    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
+    private PerfilModel perfil;
+
     @Column(unique = true, nullable = false, length = 20)
     private String username;
     @Column(unique = true, nullable = false, length = 20)
@@ -25,7 +28,4 @@ public class UsuarioModel {
     private String email;
     @Column(nullable = false)
     private String password;
-
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
-    private PerfilModel perfil;
 }
