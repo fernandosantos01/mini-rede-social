@@ -1,8 +1,10 @@
 package com.example.mini_rede_social.service;
 
+import com.example.mini_rede_social.dto.UsuarioRegistroDTO;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.BeanUtils;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,8 +24,10 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioModel salvarUsuario(UsuarioModel usuarioModel) {
-        String senhaCriptografada = passwordEncoder.encode(usuarioModel.getPassword());
+    public UsuarioModel salvarUsuario(UsuarioRegistroDTO dto) {
+        String senhaCriptografada = passwordEncoder.encode(dto.password());
+        var usuarioModel = new UsuarioModel();
+        BeanUtils.copyProperties(dto, usuarioModel);
         usuarioModel.setPassword(senhaCriptografada);
         return usuarioRepository.save(usuarioModel);
     }
