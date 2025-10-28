@@ -25,10 +25,13 @@ public class PerfilModel {
 
     @Column(nullable = false, length = 100)
     private String nomeCompleto;
-    @Column()
+
+    @Column(columnDefinition = "TEXT")
     private String bio;
+
     @Column(nullable = false)
     private LocalDate dataNascimento;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime dataCriacao = LocalDateTime.now();
 
