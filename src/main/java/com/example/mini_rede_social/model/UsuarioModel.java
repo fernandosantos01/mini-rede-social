@@ -22,10 +22,13 @@ public class UsuarioModel {
 
     @Column(unique = true, nullable = false, length = 20)
     private String username;
+
     @Column(unique = true, nullable = false, length = 20)
     private String phone_number;
+
     @Column(unique = true, nullable = false, length = 50)
     private String email;
+
     @Column(nullable = false)
     private String password;
 }
