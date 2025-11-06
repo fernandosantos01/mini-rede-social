@@ -1,0 +1,84 @@
+package com.example.mini_rede_social.service;
+
+import com.example.mini_rede_social.dto.PostagemCriacaoAtualizacaoDTO;
+import com.example.mini_rede_social.model.PostagemModel;
+import com.example.mini_rede_social.model.UsuarioModel;
+import com.example.mini_rede_social.repository.PostagemRepository;
+import com.example.mini_rede_social.repository.UsuarioRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+
+@Service
+public class PostagemService {
+    private final PostagemRepository postagemRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final SupabaseStorageService supabaseStorageService;
+
+    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService) {
+        this.postagemRepository = postagemRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.supabaseStorageService = supabaseStorageService;
+    }
+
+    @Transactional
+    public PostagemModel criarPostagem(PostagemCriacaoAtualizacaoDTO postagemCriacaoAtualizacaoDTO) throws IOException {
+        String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+        UsuarioModel autor = usuarioRepository.findByUsername(usernameLogado)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuário Não Encontrado" + usernameLogado));
+
+        String imageUrl = supabaseStorageService.uploadImage(postagemCriacaoAtualizacaoDTO.imagem());
+
+        PostagemModel novaPostagem = new PostagemModel();
+        novaPostagem.setUsuario(autor);
+        novaPostagem.setLegenda(imageUrl);
+        novaPostagem.setLegenda(postagemCriacaoAtualizacaoDTO.descricao());
+
+        return postagemRepository.save(novaPostagem);
+    }
+
+    public List<PostagemModel> buscarTodas() {
+        return postagemRepository.findAll();
+    }
+
+    public PostagemModel buscarPorId(UUID id) {
+        return postagemRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Postagem com ID " + id + "não encontrada."));
+    }
+
+    @Transactional
+    public PostagemModel atualizarPostagem(UUID id, PostagemCriacaoAtualizacaoDTO dto) {
+        PostagemModel postagemExistente = verificarPermissaoEBusca(id);
+
+        postagemExistente.setLegenda(dto.descricao());
+
+        return postagemRepository.save(postagemExistente);
+    }
+
+    @Transactional
+    public void deletarPostagem(UUID id) {
+        PostagemModel postagemParaDeletar = verificarPermissaoEBusca(id);
+
+        supabaseStorageService.deletarImagem(postagemParaDeletar.getConteudoUrl());
+
+        postagemRepository.delete(postagemParaDeletar);
+    }
+
+
+    private PostagemModel verificarPermissaoEBusca(UUID postagemId) {
+        String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        PostagemModel postagem = buscarPorId(postagemId);
+
+        if (!postagem.getUsuario().getUsername().equals(usernameLogado)) {
+            throw new SecurityException("Acesso negado: Usuário não é o autor da postagem.");
+        }
+        return postagem;
+    }
+}
