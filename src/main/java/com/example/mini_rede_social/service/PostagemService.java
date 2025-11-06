@@ -1,6 +1,8 @@
 package com.example.mini_rede_social.service;
 
+import com.example.mini_rede_social.dto.AutorDTO;
 import com.example.mini_rede_social.dto.PostagemCriacaoAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.model.PostagemModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.PostagemRepository;
@@ -14,6 +16,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class PostagemService {
@@ -37,14 +40,18 @@ public class PostagemService {
 
         PostagemModel novaPostagem = new PostagemModel();
         novaPostagem.setUsuario(autor);
-        novaPostagem.setLegenda(imageUrl);
-        novaPostagem.setLegenda(postagemCriacaoAtualizacaoDTO.descricao());
+        novaPostagem.setConteudoUrl(imageUrl);
+        novaPostagem.setLegenda(postagemCriacaoAtualizacaoDTO.legenda());
 
         return postagemRepository.save(novaPostagem);
     }
 
-    public List<PostagemModel> buscarTodas() {
-        return postagemRepository.findAll();
+    public List<PostagemResponseDTO> buscarTodas() {
+        List<PostagemModel> postagens = postagemRepository.findAll();
+
+        return postagens.stream()
+                .map(this::converterParaDTO)
+                .collect(Collectors.toList());
     }
 
     public PostagemModel buscarPorId(UUID id) {
@@ -56,7 +63,7 @@ public class PostagemService {
     public PostagemModel atualizarPostagem(UUID id, PostagemCriacaoAtualizacaoDTO dto) {
         PostagemModel postagemExistente = verificarPermissaoEBusca(id);
 
-        postagemExistente.setLegenda(dto.descricao());
+        postagemExistente.setLegenda(dto.legenda());
 
         return postagemRepository.save(postagemExistente);
     }
@@ -80,5 +87,19 @@ public class PostagemService {
             throw new SecurityException("Acesso negado: Usuário não é o autor da postagem.");
         }
         return postagem;
+    }
+
+    public PostagemResponseDTO converterParaDTO(PostagemModel postagemModel) {
+        AutorDTO autorDTO = new AutorDTO(
+                postagemModel.getUsuario().getId(),
+                postagemModel.getUsuario().getUsername());
+
+        return new PostagemResponseDTO(
+                postagemModel.getId(),
+                postagemModel.getConteudoUrl(),
+                postagemModel.getLegenda(),
+                postagemModel.getDataCriacao(),
+                autorDTO
+        );
     }
 }

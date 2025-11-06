@@ -1,6 +1,7 @@
 package com.example.mini_rede_social.controller;
 
-import com.example.mini_rede_social.dto.UsuarioRegistroDTO;
+import com.example.mini_rede_social.dto.RegistroCompletoDTO;
+import com.example.mini_rede_social.repository.PerfilRepository;
 import com.example.mini_rede_social.security.JwtUtil;
 import com.example.mini_rede_social.service.UsuarioService;
 import jakarta.validation.Valid;
@@ -10,6 +11,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,15 +24,17 @@ import java.util.Map;
 public class AuthController {
     private final UsuarioService usuarioService;
     private final AuthenticationManager authenticationManager;
+    private final PerfilRepository perfilRepository;
 
     public AuthController(UsuarioService usuarioService,
-                          AuthenticationManager authenticationManager) {
+                          AuthenticationManager authenticationManager, PerfilRepository perfilRepository) {
         this.usuarioService = usuarioService;
         this.authenticationManager = authenticationManager;
+        this.perfilRepository = perfilRepository;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid UsuarioRegistroDTO dto) {
+    public ResponseEntity<?> register(@RequestBody @Valid RegistroCompletoDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(usuarioService.salvarUsuario(dto));
     }
 

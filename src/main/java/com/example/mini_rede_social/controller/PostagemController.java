@@ -1,6 +1,7 @@
 package com.example.mini_rede_social.controller;
 
 import com.example.mini_rede_social.dto.PostagemCriacaoAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.model.PostagemModel;
 import com.example.mini_rede_social.service.PostagemService;
 import jakarta.validation.Valid;
@@ -25,7 +26,7 @@ public class PostagemController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> criarPostagem(@Validated @RequestBody PostagemCriacaoAtualizacaoDTO dto
+    public ResponseEntity<?> criarPostagem(@Validated @ModelAttribute PostagemCriacaoAtualizacaoDTO dto
     ) {
         try {
             PostagemModel novaPostagem = postagemService.criarPostagem(dto);
@@ -42,7 +43,7 @@ public class PostagemController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PostagemModel>> buscarTodasPostagens() {
+    public ResponseEntity<List<PostagemResponseDTO>> buscarTodasPostagens() {
         return ResponseEntity.status(HttpStatus.OK).body(postagemService.buscarTodas());
     }
 
@@ -52,7 +53,7 @@ public class PostagemController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarPostagem(@PathVariable UUID id, @RequestBody @Valid PostagemCriacaoAtualizacaoDTO dto) {
+    public ResponseEntity<?> atualizarPostagem(@PathVariable UUID id, @ModelAttribute @Valid PostagemCriacaoAtualizacaoDTO dto) {
         try {
             PostagemModel postagemAtualizada = postagemService.atualizarPostagem(id, dto);
             return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);

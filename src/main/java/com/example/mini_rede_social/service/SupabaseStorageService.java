@@ -1,5 +1,6 @@
 package com.example.mini_rede_social.service;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -28,16 +29,17 @@ public class SupabaseStorageService {
     private final String supabaseKey;
     private final String bucket;
 
-    public SupabaseStorageService(
-            WebClient.Builder webClientBuilder,
-            @Value("${supabase.url}") String supabaseUrl,
-            @Value("${supabase.key}") String supabaseKey,
-            @Value("${supabase.bucket}") String bucket
-    ) {
-        this.webClient = webClientBuilder.baseUrl(supabaseUrl).build();
-        this.supabaseUrl = supabaseUrl;
-        this.supabaseKey = supabaseKey;
-        this.bucket = bucket;
+    public SupabaseStorageService(WebClient.Builder webClientBuilder) {
+        Dotenv dotenv = Dotenv.load();
+
+        this.supabaseUrl = dotenv.get("SUPABASE_URL");
+        this.supabaseKey = dotenv.get("SUPABASE_KEY");
+        this.bucket = dotenv.get("SUPABASE_BUCKET");
+
+        if (this.supabaseUrl == null || this.supabaseKey == null || this.bucket == null) {
+            throw new IllegalStateException("Não foi possível carregar as variáveis do .env! Verifique o arquivo.");
+        }
+        this.webClient = webClientBuilder.baseUrl(this.supabaseUrl).build();
     }
 
     public String uploadImage(MultipartFile file) throws IOException {
@@ -60,6 +62,7 @@ public class SupabaseStorageService {
         webClient.post()
                 .uri("/storage/v1/object/{bucket}/{path}", this.bucket, path)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + this.supabaseKey)
+                .header("apikey", this.supabaseKey)
                 .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
                 .retrieve()
                 .bodyToMono(String.class)

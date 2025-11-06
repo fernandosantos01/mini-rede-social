@@ -1,6 +1,7 @@
 package com.example.mini_rede_social.service;
 
-import com.example.mini_rede_social.dto.UsuarioRegistroDTO;
+import com.example.mini_rede_social.dto.RegistroCompletoDTO;
+import com.example.mini_rede_social.model.PerfilModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
@@ -24,11 +25,15 @@ public class UsuarioService {
     }
 
     @Transactional
-    public UsuarioModel salvarUsuario(UsuarioRegistroDTO dto) {
+    public UsuarioModel salvarUsuario(RegistroCompletoDTO dto) {
         String senhaCriptografada = passwordEncoder.encode(dto.password());
         var usuarioModel = new UsuarioModel();
+        var perfilModel = new PerfilModel();
         BeanUtils.copyProperties(dto, usuarioModel);
+        BeanUtils.copyProperties(dto, perfilModel);
         usuarioModel.setPassword(senhaCriptografada);
+        usuarioModel.setPerfil(perfilModel);
+        perfilModel.setUsuario(usuarioModel);
         return usuarioRepository.save(usuarioModel);
     }
 
