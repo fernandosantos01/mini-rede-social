@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignora arquivos de ambiente que contêm segredos
+.env
+
+# Ignora logs e arquivos de build
+*.log
