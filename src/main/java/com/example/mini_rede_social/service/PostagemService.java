@@ -54,9 +54,15 @@ public class PostagemService {
                 .collect(Collectors.toList());
     }
 
-    public PostagemModel buscarPorId(UUID id) {
-        return postagemRepository.findById(id)
+    public PostagemResponseDTO buscarPorId(UUID id) {
+        var postagemModel = postagemRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("Postagem com ID " + id + "não encontrada."));
+        return converterParaDTO(postagemModel);
+
+    }
+    private PostagemModel buscarEntidadePorId(UUID id) {
+        return postagemRepository.findById(id)
+                .orElseThrow(() -> new NoSuchElementException("Postagem com ID " + id + " não encontrada."));
     }
 
     @Transactional
@@ -81,7 +87,7 @@ public class PostagemService {
     private PostagemModel verificarPermissaoEBusca(UUID postagemId) {
         String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
 
-        PostagemModel postagem = buscarPorId(postagemId);
+        PostagemModel postagem = buscarEntidadePorId(postagemId);
 
         if (!postagem.getUsuario().getUsername().equals(usernameLogado)) {
             throw new SecurityException("Acesso negado: Usuário não é o autor da postagem.");

@@ -48,7 +48,7 @@ public class PostagemController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<PostagemModel> buscarPostagemPorId(@PathVariable UUID id) {
+    public ResponseEntity<PostagemResponseDTO> buscarPostagemPorId(@PathVariable UUID id) {
         return ResponseEntity.status(HttpStatus.OK).body(postagemService.buscarPorId(id));
     }
 
