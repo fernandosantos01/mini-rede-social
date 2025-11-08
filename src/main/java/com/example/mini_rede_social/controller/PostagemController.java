@@ -27,19 +27,10 @@ public class PostagemController {
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> criarPostagem(@Validated @ModelAttribute PostagemCriacaoAtualizacaoDTO dto
-    ) {
-        try {
-            PostagemModel novaPostagem = postagemService.criarPostagem(dto);
+    ) throws IOException {
+        PostagemModel novaPostagem = postagemService.criarPostagem(dto);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(novaPostagem);
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha ao processar o arquivo de imagem: " + e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Falha no upload para o Supabase: " + e.getMessage());
-        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(novaPostagem);
     }
 
     @GetMapping
@@ -54,24 +45,13 @@ public class PostagemController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizarPostagem(@PathVariable UUID id, @ModelAttribute @Valid PostagemCriacaoAtualizacaoDTO dto) {
-        try {
-            PostagemModel postagemAtualizada = postagemService.atualizarPostagem(id, dto);
-            return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);
-
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
+        PostagemModel postagemAtualizada = postagemService.atualizarPostagem(id, dto);
+        return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deletarPostagem(@PathVariable UUID id) {
-        try {
-            postagemService.deletarPostagem(id);
-
-            return ResponseEntity.noContent().build();
-
-        } catch (SecurityException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
-        }
+        postagemService.deletarPostagem(id);
+        return ResponseEntity.noContent().build();
     }
 }
