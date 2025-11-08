@@ -3,6 +3,7 @@ package com.example.mini_rede_social.service;
 import com.example.mini_rede_social.dto.AutorDTO;
 import com.example.mini_rede_social.dto.PostagemCriacaoAtualizacaoDTO;
 import com.example.mini_rede_social.dto.PostagemResponseDTO;
+import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
 import com.example.mini_rede_social.model.PostagemModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.PostagemRepository;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -56,13 +56,13 @@ public class PostagemService {
 
     public PostagemResponseDTO buscarPorId(UUID id) {
         var postagemModel = postagemRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Postagem com ID " + id + "não encontrada."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Postagem com ID " + id + "não encontrada."));
         return converterParaDTO(postagemModel);
 
     }
     private PostagemModel buscarEntidadePorId(UUID id) {
         return postagemRepository.findById(id)
-                .orElseThrow(() -> new NoSuchElementException("Postagem com ID " + id + " não encontrada."));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Postagem com ID " + id + " não encontrada."));
     }
 
     @Transactional
