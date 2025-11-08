@@ -28,7 +28,7 @@ public class PostagemController {
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> criarPostagem(@Validated @ModelAttribute PostagemCriacaoAtualizacaoDTO dto
     ) throws IOException {
-        PostagemModel novaPostagem = postagemService.criarPostagem(dto);
+        PostagemResponseDTO novaPostagem = postagemService.criarPostagem(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(novaPostagem);
     }

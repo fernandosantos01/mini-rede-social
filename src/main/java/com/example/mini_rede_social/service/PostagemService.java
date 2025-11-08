@@ -31,7 +31,7 @@ public class PostagemService {
     }
 
     @Transactional
-    public PostagemModel criarPostagem(PostagemCriacaoAtualizacaoDTO postagemCriacaoAtualizacaoDTO) throws IOException {
+    public PostagemResponseDTO criarPostagem(PostagemCriacaoAtualizacaoDTO postagemCriacaoAtualizacaoDTO) throws IOException {
         String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
         UsuarioModel autor = usuarioRepository.findByUsername(usernameLogado)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário Não Encontrado" + usernameLogado));
@@ -43,7 +43,8 @@ public class PostagemService {
         novaPostagem.setConteudoUrl(imageUrl);
         novaPostagem.setLegenda(postagemCriacaoAtualizacaoDTO.legenda());
 
-        return postagemRepository.save(novaPostagem);
+        PostagemModel postagemSalva = postagemRepository.save(novaPostagem);
+        return converterParaDTO(postagemSalva);
     }
 
     public List<PostagemResponseDTO> buscarTodas() {
