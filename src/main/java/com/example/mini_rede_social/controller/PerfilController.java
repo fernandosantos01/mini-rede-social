@@ -1,6 +1,7 @@
 package com.example.mini_rede_social.controller;
 
 import com.example.mini_rede_social.dto.PerfilAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PerfilResponseDTO;
 import com.example.mini_rede_social.model.PerfilModel;
 import com.example.mini_rede_social.service.PerfilService;
 import jakarta.validation.Valid;
@@ -19,12 +20,12 @@ public class PerfilController {
     }
 
     @GetMapping("/{username}")
-    public ResponseEntity<PerfilModel> getPerfilPorUsername(@PathVariable String username) {
+    public ResponseEntity<PerfilResponseDTO> getPerfilPorUsername(@PathVariable String username) {
         return ResponseEntity.status(HttpStatus.OK).body(perfilService.buscarPerfilPorUsername(username));
     }
 
     @PutMapping
-    public ResponseEntity<PerfilModel> atualizarPerfil(@RequestBody @Valid PerfilAtualizacaoDTO dto) {
+    public ResponseEntity<PerfilResponseDTO> atualizarPerfil(@RequestBody @Valid PerfilAtualizacaoDTO dto) {
         return ResponseEntity.status(HttpStatus.OK).body(perfilService.atualizarPerfil(dto));
     }
 }

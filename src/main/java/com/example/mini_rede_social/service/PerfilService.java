@@ -1,6 +1,7 @@
 package com.example.mini_rede_social.service;
 
 import com.example.mini_rede_social.dto.PerfilAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PerfilResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
 import com.example.mini_rede_social.model.PerfilModel;
 import com.example.mini_rede_social.model.UsuarioModel;
@@ -30,28 +31,36 @@ public class PerfilService {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil não encontrado " + usernameLogado));
     }
 
-    public PerfilModel buscarPerfilPorUsername(String username) {
+    public PerfilResponseDTO buscarPerfilPorUsername(String username) {
         UsuarioModel usuario = usuarioRepository.findByUsername(username)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário com username " + username + " não encontrado"));
 
-        return perfilRepository.findById(usuario.getId())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil não encontrado " + username));
+        return converterPerfilParaDTO(perfilRepository.findById(usuario.getId())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil não encontrado " + username)));
     }
 
     @Transactional
-    public PerfilModel atualizarPerfil(PerfilAtualizacaoDTO dto) {
-        PerfilModel perfilParaAtualizar = getPerfilDoUsuarioLogado();
+    public PerfilResponseDTO atualizarPerfil(PerfilAtualizacaoDTO dto) {
+        PerfilModel perfil = getPerfilDoUsuarioLogado();
 
         if (dto.nomeCompleto() != null && !dto.nomeCompleto().isBlank()) {
-            perfilParaAtualizar.setNomeCompleto(dto.nomeCompleto());
+            perfil.setNomeCompleto(dto.nomeCompleto());
         }
         if (dto.bio() != null) {
-            perfilParaAtualizar.setBio(dto.bio());
+            perfil.setBio(dto.bio());
         }
         if (dto.dataNascimento() != null) {
-            perfilParaAtualizar.setDataNascimento(dto.dataNascimento());
+            perfil.setDataNascimento(dto.dataNascimento());
         }
+        return converterPerfilParaDTO(perfilRepository.save(perfil));
+    }
 
-        return perfilRepository.save(perfilParaAtualizar);
+    private PerfilResponseDTO converterPerfilParaDTO(PerfilModel perfil) {
+        return new PerfilResponseDTO(
+                perfil.getId(),
+                perfil.getNomeCompleto(),
+                perfil.getBio(),
+                perfil.getDataNascimento()
+        );
     }
 }
