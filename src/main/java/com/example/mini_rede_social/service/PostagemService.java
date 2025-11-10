@@ -1,7 +1,8 @@
 package com.example.mini_rede_social.service;
 
 import com.example.mini_rede_social.dto.AutorDTO;
-import com.example.mini_rede_social.dto.PostagemCriacaoAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PostagemAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PostagemCriacaoDTO;
 import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
 import com.example.mini_rede_social.model.PostagemModel;
@@ -31,17 +32,17 @@ public class PostagemService {
     }
 
     @Transactional
-    public PostagemResponseDTO criarPostagem(PostagemCriacaoAtualizacaoDTO postagemCriacaoAtualizacaoDTO) throws IOException {
+    public PostagemResponseDTO criarPostagem(PostagemCriacaoDTO postagemCriacaoDTO) throws IOException {
         String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
         UsuarioModel autor = usuarioRepository.findByUsername(usernameLogado)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuário Não Encontrado" + usernameLogado));
 
-        String imageUrl = supabaseStorageService.uploadImage(postagemCriacaoAtualizacaoDTO.imagem());
+        String imageUrl = supabaseStorageService.uploadImage(postagemCriacaoDTO.imagem());
 
         PostagemModel novaPostagem = new PostagemModel();
         novaPostagem.setUsuario(autor);
         novaPostagem.setConteudoUrl(imageUrl);
-        novaPostagem.setLegenda(postagemCriacaoAtualizacaoDTO.legenda());
+        novaPostagem.setLegenda(postagemCriacaoDTO.legenda());
 
         PostagemModel postagemSalva = postagemRepository.save(novaPostagem);
         return converterParaDTO(postagemSalva);
@@ -61,18 +62,37 @@ public class PostagemService {
         return converterParaDTO(postagemModel);
 
     }
+
     private PostagemModel buscarEntidadePorId(UUID id) {
         return postagemRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Postagem com ID " + id + " não encontrada."));
     }
 
     @Transactional
-    public PostagemModel atualizarPostagem(UUID id, PostagemCriacaoAtualizacaoDTO dto) {
+    public PostagemResponseDTO atualizarPostagem(UUID id, PostagemAtualizacaoDTO dto) throws IOException {
         PostagemModel postagemExistente = verificarPermissaoEBusca(id);
 
-        postagemExistente.setLegenda(dto.legenda());
+        String urlAntiga = postagemExistente.getConteudoUrl();
 
-        return postagemRepository.save(postagemExistente);
+        if (dto.imagem() != null && !dto.imagem().isEmpty()) {
+            String novaUrl = supabaseStorageService.uploadImage(dto.imagem());
+            postagemExistente.setConteudoUrl(novaUrl);
+        }
+
+        if (dto.legenda() != null) {
+            postagemExistente.setLegenda(dto.legenda());
+        }
+
+        PostagemModel postagemSalva = postagemRepository.save(postagemExistente);
+
+        if (dto.imagem() != null && !dto.imagem().isEmpty() && urlAntiga != null) {
+            try {
+                supabaseStorageService.deletarImagem(urlAntiga);
+            } catch (Exception ex) {
+                System.err.println("Falha ao deletar a imagem antiga do Supabase " + urlAntiga);
+            }
+        }
+        return converterParaDTO(postagemSalva);
     }
 
     @Transactional

@@ -1,6 +1,7 @@
 package com.example.mini_rede_social.controller;
 
-import com.example.mini_rede_social.dto.PostagemCriacaoAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PostagemAtualizacaoDTO;
+import com.example.mini_rede_social.dto.PostagemCriacaoDTO;
 import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.model.PostagemModel;
 import com.example.mini_rede_social.service.PostagemService;
@@ -26,7 +27,7 @@ public class PostagemController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> criarPostagem(@Validated @ModelAttribute PostagemCriacaoAtualizacaoDTO dto
+    public ResponseEntity<?> criarPostagem(@Validated @ModelAttribute PostagemCriacaoDTO dto
     ) throws IOException {
         PostagemResponseDTO novaPostagem = postagemService.criarPostagem(dto);
 
@@ -43,10 +44,13 @@ public class PostagemController {
         return ResponseEntity.status(HttpStatus.OK).body(postagemService.buscarPorId(id));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarPostagem(@PathVariable UUID id, @ModelAttribute @Valid PostagemCriacaoAtualizacaoDTO dto) {
-        PostagemModel postagemAtualizada = postagemService.atualizarPostagem(id, dto);
-        return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> atualizarPostagem(
+            @PathVariable UUID id,
+            @ModelAttribute @Validated PostagemAtualizacaoDTO dto) throws IOException {
+            PostagemResponseDTO postagemAtualizada = postagemService.atualizarPostagem(id, dto);
+            return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);
+
     }
 
     @DeleteMapping("/{id}")
