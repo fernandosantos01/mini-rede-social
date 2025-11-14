@@ -3,6 +3,7 @@ package com.example.mini_rede_social.service;
 import com.example.mini_rede_social.dto.RegistroCompletoDTO;
 import com.example.mini_rede_social.dto.UsuarioResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
+import com.example.mini_rede_social.mapper.UsuarioMapper;
 import com.example.mini_rede_social.model.PerfilModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.UsuarioRepository;
@@ -19,10 +20,12 @@ import java.util.UUID;
 public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UsuarioMapper usuarioMapper;
 
-    public UsuarioService(UsuarioRepository usuarioRepository) {
+    public UsuarioService(UsuarioRepository usuarioRepository, UsuarioMapper usuarioMapper) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
+        this.usuarioMapper = usuarioMapper;
     }
 
     @Transactional
@@ -36,7 +39,7 @@ public class UsuarioService {
         usuarioModel.setPerfil(perfilModel);
         perfilModel.setUsuario(usuarioModel);
         UsuarioModel usuarioSalvo = usuarioRepository.save(usuarioModel);
-        return converterParaUsuarioDTO(usuarioSalvo);
+        return usuarioMapper.toResponseDTO(usuarioSalvo);
     }
 
     public List<UsuarioModel> listarTodosUsuarios() {
@@ -57,17 +60,5 @@ public class UsuarioService {
     @Transactional
     public void deletarUsuario(UsuarioModel usuarioModel) {
         usuarioRepository.delete(usuarioModel);
-    }
-
-    private UsuarioResponseDTO converterParaUsuarioDTO(UsuarioModel usuario) {
-        return new UsuarioResponseDTO(
-                usuario.getId(),
-                usuario.getUsername(),
-                usuario.getEmail(),
-                usuario.getPhone_number(),
-                usuario.getPerfil().getNomeCompleto(),
-                usuario.getPerfil().getBio(),
-                usuario.getPerfil().getDataNascimento()
-        );
     }
 }

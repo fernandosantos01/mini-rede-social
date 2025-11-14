@@ -5,6 +5,7 @@ import com.example.mini_rede_social.dto.PostagemAtualizacaoDTO;
 import com.example.mini_rede_social.dto.PostagemCriacaoDTO;
 import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
+import com.example.mini_rede_social.mapper.PostagemMapper;
 import com.example.mini_rede_social.model.PostagemModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.PostagemRepository;
@@ -23,12 +24,14 @@ import java.util.stream.Collectors;
 public class PostagemService {
     private final PostagemRepository postagemRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PostagemMapper postagemMapper;
     private final SupabaseStorageService supabaseStorageService;
 
-    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService) {
+    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService, PostagemMapper postagemMapper) {
         this.postagemRepository = postagemRepository;
         this.usuarioRepository = usuarioRepository;
         this.supabaseStorageService = supabaseStorageService;
+        this.postagemMapper = postagemMapper;
     }
 
     @Transactional
@@ -45,25 +48,25 @@ public class PostagemService {
         novaPostagem.setLegenda(postagemCriacaoDTO.legenda());
 
         PostagemModel postagemSalva = postagemRepository.save(novaPostagem);
-        return converterParaDTO(postagemSalva);
+        return postagemMapper.toResponseDTO(postagemSalva);
     }
 
     public List<PostagemResponseDTO> buscarTodas() {
         List<PostagemModel> postagens = postagemRepository.findAll();
 
         return postagens.stream()
-                .map(this::converterParaDTO)
+                .map(postagemMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
     public PostagemResponseDTO buscarPorId(UUID id) {
         var postagemModel = postagemRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Postagem com ID " + id + "não encontrada."));
-        return converterParaDTO(postagemModel);
+        return postagemMapper.toResponseDTO(postagemModel);
 
     }
 
-    private PostagemModel buscarEntidadePorId(UUID id) {
+    public PostagemModel buscarEntidadePorId(UUID id) {
         return postagemRepository.findById(id)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Postagem com ID " + id + " não encontrada."));
     }
@@ -92,7 +95,7 @@ public class PostagemService {
                 System.err.println("Falha ao deletar a imagem antiga do Supabase " + urlAntiga);
             }
         }
-        return converterParaDTO(postagemSalva);
+        return postagemMapper.toResponseDTO(postagemSalva);
     }
 
     @Transactional
@@ -114,19 +117,5 @@ public class PostagemService {
             throw new SecurityException("Acesso negado: Usuário não é o autor da postagem.");
         }
         return postagem;
-    }
-
-    public PostagemResponseDTO converterParaDTO(PostagemModel postagemModel) {
-        AutorDTO autorDTO = new AutorDTO(
-                postagemModel.getUsuario().getId(),
-                postagemModel.getUsuario().getUsername());
-
-        return new PostagemResponseDTO(
-                postagemModel.getId(),
-                postagemModel.getConteudoUrl(),
-                postagemModel.getLegenda(),
-                postagemModel.getDataCriacao(),
-                autorDTO
-        );
     }
 }

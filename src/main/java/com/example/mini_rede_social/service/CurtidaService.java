@@ -2,6 +2,7 @@ package com.example.mini_rede_social.service;
 
 import com.example.mini_rede_social.dto.CurtidaResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
+import com.example.mini_rede_social.mapper.CurtidaMapper;
 import com.example.mini_rede_social.model.CurtidaModel;
 import com.example.mini_rede_social.model.PostagemModel;
 import com.example.mini_rede_social.model.UsuarioModel;
@@ -18,11 +19,13 @@ public class CurtidaService {
     private final CurtidaRepository curtidaRepository;
     private final PostagemRepository postagemRepository;
     private final UsuarioService usuarioService;
+    private final CurtidaMapper curtidaMapper;
 
-    public CurtidaService(CurtidaRepository curtidaRepository, PostagemRepository postagemRepository, UsuarioService usuarioService) {
+    public CurtidaService(CurtidaRepository curtidaRepository, PostagemRepository postagemRepository, UsuarioService usuarioService, CurtidaMapper curtidaMapper) {
         this.curtidaRepository = curtidaRepository;
         this.postagemRepository = postagemRepository;
         this.usuarioService = usuarioService;
+        this.curtidaMapper = curtidaMapper;
     }
 
     private UsuarioModel getUsuarioLogado() {
@@ -40,8 +43,7 @@ public class CurtidaService {
         CurtidaModel novaCurtida = new CurtidaModel();
         novaCurtida.setUsuario(usuario);
         novaCurtida.setPostagem(postagem);
-
-        return converterParaDTO(curtidaRepository.save(novaCurtida));
+        return curtidaMapper.toResponseDTO(curtidaRepository.save(novaCurtida));
 
     }
 
@@ -52,14 +54,5 @@ public class CurtidaService {
         CurtidaModel curtidaParaDeletar = curtidaRepository.findByUsuarioIdAndPostagemId(usuario.getId(), postagemId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Curtida não encontrada. Você não curtiu esta postagem."));
         curtidaRepository.delete(curtidaParaDeletar);
-    }
-
-    private CurtidaResponseDTO converterParaDTO(CurtidaModel curtida) {
-        return new CurtidaResponseDTO(
-                curtida.getId(),
-                curtida.getUsuario().getUsername(),
-                curtida.getUsuario().getId(),
-                curtida.getPostagem().getId()
-        );
     }
 }
