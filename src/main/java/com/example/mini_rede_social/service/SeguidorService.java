@@ -71,4 +71,12 @@ public class SeguidorService {
                 .map(relacao -> perfilMapper.toResponseDTO(relacao.getSeguidor().getPerfil()))
                 .collect(Collectors.toList());
     }
+
+    public List<UUID> listarIdsSeguindo(UUID seguidorId) {
+        List<SeguidorModel> relacoes = seguidorRepository.findBySeguidoId(seguidorId);
+
+        return relacoes.stream()
+                .map(relacao -> relacao.getSeguido().getId())
+                .collect(Collectors.toList());
+    }
 }

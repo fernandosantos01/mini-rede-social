@@ -7,10 +7,13 @@ import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
 import com.example.mini_rede_social.mapper.PostagemMapper;
 import com.example.mini_rede_social.model.PostagemModel;
+import com.example.mini_rede_social.model.SeguidorModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.PostagemRepository;
 import com.example.mini_rede_social.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -26,12 +29,14 @@ public class PostagemService {
     private final UsuarioRepository usuarioRepository;
     private final PostagemMapper postagemMapper;
     private final SupabaseStorageService supabaseStorageService;
+    private final SeguidorService seguidorService;
 
-    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService, PostagemMapper postagemMapper) {
+    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService, PostagemMapper postagemMapper, SeguidorService seguidorService) {
         this.postagemRepository = postagemRepository;
         this.usuarioRepository = usuarioRepository;
         this.supabaseStorageService = supabaseStorageService;
         this.postagemMapper = postagemMapper;
+        this.seguidorService = seguidorService;
     }
 
     @Transactional
@@ -117,5 +122,9 @@ public class PostagemService {
             throw new SecurityException("Acesso negado: Usuário não é o autor da postagem.");
         }
         return postagem;
+    }
+
+    public Page<PostagemModel> buscarPostagensPorListaDeAutores(List<UUID> idsDosAutores, Pageable pageable) {
+        return postagemRepository.findByUsuarioIdIn(idsDosAutores, pageable);
     }
 }

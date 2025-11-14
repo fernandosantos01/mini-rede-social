@@ -4,8 +4,13 @@ import com.example.mini_rede_social.dto.PostagemAtualizacaoDTO;
 import com.example.mini_rede_social.dto.PostagemCriacaoDTO;
 import com.example.mini_rede_social.dto.PostagemResponseDTO;
 import com.example.mini_rede_social.model.PostagemModel;
+import com.example.mini_rede_social.service.FeedService;
 import com.example.mini_rede_social.service.PostagemService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -21,9 +26,11 @@ import java.util.UUID;
 public class PostagemController {
 
     private final PostagemService postagemService;
+    private final FeedService feedService;
 
-    public PostagemController(PostagemService postagemService) {
+    public PostagemController(PostagemService postagemService, FeedService feedService) {
         this.postagemService = postagemService;
+        this.feedService = feedService;
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -32,6 +39,18 @@ public class PostagemController {
         PostagemResponseDTO novaPostagem = postagemService.criarPostagem(dto);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(novaPostagem);
+    }
+
+    @GetMapping("/feed")
+    public ResponseEntity<Page<PostagemResponseDTO>> getFeed(
+            @PageableDefault(
+                    size = 10,
+                    sort = "dataCriacao",
+                    direction = Sort.Direction.DESC
+            ) Pageable pageable
+    ) {
+        Page<PostagemResponseDTO> feed = feedService.buscarFeed(pageable);
+        return ResponseEntity.ok(feed);
     }
 
     @GetMapping
@@ -48,8 +67,8 @@ public class PostagemController {
     public ResponseEntity<?> atualizarPostagem(
             @PathVariable UUID id,
             @ModelAttribute @Validated PostagemAtualizacaoDTO dto) throws IOException {
-            PostagemResponseDTO postagemAtualizada = postagemService.atualizarPostagem(id, dto);
-            return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);
+        PostagemResponseDTO postagemAtualizada = postagemService.atualizarPostagem(id, dto);
+        return ResponseEntity.status(HttpStatus.OK).body(postagemAtualizada);
 
     }
 
