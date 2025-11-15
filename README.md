@@ -6,167 +6,194 @@
 
 ## 📘 Visão Geral
 
-A **Mini Rede Social** é uma aplicação desenvolvida com o objetivo de **simular o funcionamento básico de uma rede social moderna**, oferecendo recursos como:
+A **Mini Rede Social** é uma API RESTful completa que simula o funcionamento de uma rede social moderna. O projeto foi desenvolvido com foco em **arquitetura limpa (SOLID)**, **padrões de design (Pattern)** e **segurança ponta-a-ponta**.
 
-- Criação de perfis de usuário  
-- Postagens com texto e mídia  
-- Sistema de curtidas e comentários  
-- Seguir e deixar de seguir usuários  
-- Autenticação e autorização via JWT  
+A aplicação permite:
 
-O foco do projeto é aplicar **boas práticas de engenharia de software**, **padrões de arquitetura** e **segurança**, utilizando **Spring Boot** no back-end e integração com um banco de dados relacional.
+-   Criação de perfis de usuário (com dados de autenticação e dados públicos separados).
+-   Upload de postagens com mídia (fotos) direto para a nuvem (Supabase Storage).
+-   Sistema de Curtidas, Comentários, Seguir e Deixar de Seguir.
+-   Geração de um Feed principal complexo, paginado e ordenado.
+-   Autenticação e autorização via JWT (Stateless).
 
 ---
 
 ## ⚙️ Tecnologias Utilizadas
 
 | Categoria | Tecnologias |
-|------------|--------------|
-| Linguagem | Java 17 |
-| Framework | Spring Boot 3 |
-| ORM / Banco de Dados | JPA / Hibernate / PostgreSQL |
-| Segurança | Spring Security + JWT |
+| :--- | :--- |
+| Linguagem | **Java 21** |
+| Framework | **Spring Boot 3** |
+| ORM / Banco de Dados | JPA / Hibernate / **PostgreSQL** |
+| Segurança | **Spring Security 6** + **JWT** (JSON Web Token) |
+| Armazenamento de Mídia | **Supabase Storage** (via API REST com `WebClient`) |
+| Containerização | **Docker** / **Docker Compose** |
 | Build | Maven |
-| Testes | JUnit 5 |
-| Documentação | Swagger (OpenAPI) |
+| Testes | JUnit 5 / AssertJ / Spring Test |
 | Versionamento | Git + GitHub |
+
+---
+
+## 🧩 Arquitetura Aplicada
+
+A aplicação segue uma arquitetura em 3 camadas (`Controller`, `Service`, `Repository`) com foco nos princípios **SOLID**.
+
+-   **`Controller` (Camada de API):** Lida apenas com o roteamento HTTP. Não contém lógica de negócio.
+-   **`Service` (Camada de Negócio):** Orquestra as regras (quem pode postar, como gerar o feed). Usa *Service-para-Service* para manter o encapsulamento.
+-   **`Repository` (Camada de Dados):** Interfaces `JpaRepository` para acesso ao banco.
+-   **`DTOs` (Data Transfer Objects):** Separação total dos dados de entrada (`CriacaoDTO`), saída (`ResponseDTO`) e Entidades, garantindo que dados sensíveis (senhas) nunca sejam expostos.
+-   **`Mapper` (Padrão de Mapeamento):** Classes dedicadas para converter DTOs ↔ Entidades, mantendo os Services limpos.
+-   **`GlobalExceptionHandler`:** Um "Xerife" (`@RestControllerAdvice`) que centraliza o tratamento de todos os erros (404, 403, 400, 409), mantendo os Controllers 100% limpos de `try-catch`.
 
 ---
 
 ## 🧩 Estrutura do Projeto
 
-src/ <br/>
-├── main/ <br/>
-│ ├── java/com/minirede/ <br/>
-│ │ ├── controller/ → Endpoints REST <br/>
-│ │ ├── service/ → Regras de negócio <br/>
-│ │ ├── repository/ → Acesso ao banco de dados <br/>
-│ │ ├── model/ → Entidades JPA <br/>
-│ │ ├── dto/ → Objetos de transferência de dados <br/>
-│ │ └── security/ → Autenticação e JWT <br/>
-│ └── resources/ <br/>
-│ ├── application.yml → Configurações do sistema <br/>
-│ └── data.sql → Dados iniciais (seed) <br/>
-└── test/ <br/>
-└── ... → Testes unitários e de integração <br/>
+src/</br>
+├── main/</br>
+│ ├── .../mini_rede_social/</br>
+│ │ ├── controller/ → (Endpoints REST)</br>
+│ │ ├── service/    → (Regras de Negócio: FeedService, PostagemService...)</br>
+│ │ ├── repository/ → (Interfaces JpaRepository)</br>
+│ │ ├── model/      → (Entidades JPA: @Entity)</br>
+│ │ ├── dto/        → (DTOs de Requisição e Resposta: Records)</br>
+│ │ ├── mapper/     → (Conversores: PostagemMapper, UsuarioMapper...)</br>
+│ │ ├── security/   → (SecurityConfig, JwtUtil, JwtAuthFilter...)</br>
+│ │ ├── exception/  → (GlobalExceptionHandler, Exceções Customizadas)</br>
+│ │ └── config/     → (WebClientConfig, SupabaseConfig)</br>
+│ └── resources/</br>
+│   ├── application.properties         → (Configuração local)</br>
+│   └── application-docker.properties  → (Configuração para o Docker)</br>
+└── test/</br>
+└── ... → (Testes de Integração e Unitários)
 
 
 ---
 
-## 🧱 Modelagem de Dados
+---
 
-### **Entidades Principais**
-| Entidade | Descrição |
-|-----------|------------|
-| **User** | Representa o usuário da rede (nome, e-mail, senha, bio, imagem de perfil). |
-| **Post** | Representa publicações feitas pelos usuários. |
-| **Comment** | Comentários associados a um post. |
-| **Like** | Curtidas realizadas pelos usuários em posts. |
-| **Follow** | Relação entre seguidores e seguidos. |
+## 🧱 Modelagem de Dados (JPA)
 
-### **Relacionamentos**
-- `User` 1️⃣→N `Post`  
-- `Post` 1️⃣→N `Comment`  
-- `Post` 1️⃣→N `Like`  
-- `User` N️⃣↔N `Follow`
+A modelagem separa dados de Autenticação (`UsuarioModel`) de dados Públicos (`PerfilModel`) usando um relacionamento 1:1, garantindo segurança.
+
+
+### **Relacionamentos Principais:**
+-   `Usuario` 1️⃣→1️⃣ `Perfil` (O Perfil é uma extensão do Usuário)
+-   `Usuario` 1️⃣→N `Postagem` (Autoria)
+-   `Usuario` 1️⃣→N `Comentario` (Autoria)
+-   `Usuario` 1️⃣→N `Curtida`
+-   `Postagem` 1️⃣→N `Comentario`
+-   `Postagem` 1️⃣→N `Curtida`
+-   `Usuario` N️↔N `Usuario` (Implementado pela entidade `SeguidorModel`)
 
 ---
 
 ## 🔐 Autenticação e Segurança
 
-O sistema utiliza **Spring Security com JWT (JSON Web Token)** para garantir autenticação e autorização seguras.
+O sistema utiliza **Spring Security** com arquitetura **Stateless (Sem Sessão)**, usando **JWT (JSON Web Token)**.
 
 ### Fluxo de autenticação:
-1. O usuário realiza login enviando `email` e `senha`.
-2. O backend valida as credenciais.
-3. É gerado um **token JWT** contendo as permissões do usuário.
-4. O token deve ser enviado em todas as requisições autenticadas:
-
-
----
-
-## 🧠 Lógica de Negócio
-
-- Usuários podem **seguir** e **ser seguidos**.
-- Um usuário pode **criar, editar e excluir** apenas seus próprios posts.
-- É possível **curtir e comentar** publicações de outros usuários.
-- O **feed** exibe publicações dos usuários seguidos.
+1.  O usuário envia `username` e `password` para `POST /auth/login`.
+2.  O `AuthenticationManager` valida as credenciais (usando o `UserDetailsService` e `PasswordEncoder`).
+3.  O `JwtUtil` gera um token JWT de curta duração.
+4.  Para rotas protegidas (ex: `POST /api/postagens`), o token deve ser enviado no cabeçalho `Authorization` como `Bearer [TOKEN]`.
+5.  O filtro `JwtAuthFilter` intercepta, valida o token e autentica o usuário na requisição.
 
 ---
 
-## 🚀 Endpoints Principais
+## 🚀 Endpoints Principais (API REST)
 
-### 👤 Usuários
-| Método | Endpoint | Descrição |
-|--------|-----------|------------|
-| `POST` | `/api/users/register` | Registra um novo usuário |
-| `POST` | `/api/users/login` | Realiza login e retorna JWT |
-| `GET` | `/api/users/{id}` | Retorna o perfil do usuário |
-| `PUT` | `/api/users/{id}` | Atualiza dados do usuário |
-| `POST` | `/api/users/{id}/follow` | Segue um usuário |
-| `GET` | `/api/users/{id}/followers` | Lista seguidores |
+### 👤 Autenticação (`/auth`)
+| Método | Endpoint | Descrição | Status |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/auth/register` | Registra um novo Usuário e Perfil (com DTOs). | ✅ |
+| `POST` | `/auth/login` | Realiza login e retorna o Token JWT. | ✅ |
+
+### 🛂 Status (Público)
+| Método | Endpoint | Descrição | Status |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/status` | Health Check (Verifica se a API está no ar). | ✅ |
+
+### 🖼️ Postagens (`/api/postagens`)
+| Método | Endpoint | Descrição | Status |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/postagens` | Cria uma nova postagem (Requer `form-data` com imagem). | ✅ |
+| `GET` | `/api/postagens/feed` | **(Feed Principal)** Lista postagens de quem você segue (Paginado). | ✅ |
+| `GET` | `/api/postagens/{id}` | Retorna detalhes de uma postagem (com `PostagemResponseDTO`). | ✅ |
+| `PUT` | `/api/postagens/{id}` | Atualiza imagem ou legenda (Somente autor). | ✅ |
+| `DELETE`| `/api/postagens/{id}` | Remove uma postagem (Somente autor). | ✅ |
+
+### ❤️ Interações Sociais (Curtir/Comentar)
+| Método | Endpoint | Descrição | Status |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/postagens/{postId}/curtir` | Curte uma postagem (Trata 409 se já curtiu). | ✅ |
+| `DELETE`| `/api/postagens/{postId}/descurtir` | Descurte uma postagem. | ✅ |
+| `POST` | `/api/postagens/{postId}/comentarios` | Adiciona um comentário a um post. | ✅ |
+| `GET` | `/api/postagens/{postId}/comentarios` | Lista comentários de um post. | ✅ |
+| `DELETE`| `/api/comentarios/{id}` | Deleta um comentário (Autor ou Dono do post). | ✅ |
+
+### 👥 Perfis e Seguidores (`/api/usuarios`, `/api/perfis`)
+| Método | Endpoint | Descrição | Status |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/perfis/{username}` | Retorna o perfil público de um usuário (com `PerfilResponseDTO`). | ✅ |
+| `PUT` | `/api/perfis` | Atualiza o *seu próprio* perfil (via Token JWT). | ✅ |
+| `POST` | `/api/usuarios/{username}/seguir` | Segue um usuário. | ✅ |
+| `DELETE`| `/api/usuarios/{username}/deixar-de-seguir` | Deixa de seguir um usuário. | ✅ |
+| `GET` | `/api/usuarios/{username}/seguidores` | Lista os seguidores de um usuário. | ✅ |
+| `GET` | `/api/usuarios/{username}/seguindo` | Lista quem um usuário está seguindo. | ✅ |
 
 ---
 
-### 📝 Postagens
-| Método | Endpoint | Descrição |
-|--------|-----------|------------|
-| `GET` | `/api/posts` | Lista todas as postagens |
-| `POST` | `/api/posts` | Cria uma nova postagem |
-| `GET` | `/api/posts/{id}` | Retorna detalhes de uma postagem |
-| `DELETE` | `/api/posts/{id}` | Remove uma postagem (somente autor/admin) |
+## 🧰 Configuração e Execução (Docker)
 
----
-
-### 💬 Comentários
-| Método | Endpoint | Descrição |
-|--------|-----------|------------|
-| `POST` | `/api/comments` | Cria um novo comentário |
-| `GET` | `/api/comments/post/{postId}` | Lista comentários de uma postagem |
-
----
-
-### ❤️ Curtidas
-| Método | Endpoint | Descrição |
-|--------|-----------|------------|
-| `POST` | `/api/likes/{postId}` | Curte ou descurte um post |
-| `GET` | `/api/likes/post/{postId}` | Lista curtidas de um post |
-
----
-
-## 🧰 Configuração e Execução
+Este projeto é 100% containerizado usando **Docker Compose**. Ele sobe a API, o Banco de Dados (Postgres) e o Admin (PgAdmin) em uma rede isolada.
 
 ### 🔧 Pré-requisitos
-- Java 17+
-- Maven 3+
-- PostgreSQL 15+
+-   Java 21+ (Para desenvolvimento local, se não usar Docker)
+-   Maven 3+
+-   **Docker** e **Docker Compose** (Instalados e rodando)
 
-### ▶️ Executar o Projeto
+### ▶️ Executar o Projeto com Docker (Recomendado)
 
+1.  **Clone o repositório:**
+    ```bash
+    git clone [https://github.com/fernandosantos01/mini-rede-social.git](https://github.com/fernandosantos01/mini-rede-social.git)
+    cd mini-rede-social
+    ```
+2.  **Crie o arquivo `.env`:**
+    Na raiz do projeto, crie um arquivo `.env` com suas senhas e chaves (use o `.env.example` como base).
+    ```env
+    # Credenciais do Banco
+    POSTGRES_DB=minisocial_db
+    POSTGRES_USER=admin
+    POSTGRES_PASSWORD=adminpass
+    
+    # Credenciais do Supabase
+    SUPABASE_URL=https://[...].supabase.co
+    SUPABASE_KEY=[SUA_SERVICE_ROLE_KEY]
+    SUPABASE_BUCKET=postagens
+    
+    # Credenciais do PgAdmin
+    PGADMIN_EMAIL=admin@admin.com
+    PGADMIN_PASSWORD=admin
+    ```
+
+3.  **Suba o Ambiente:**
+    (O Docker irá compilar o Java, baixar o Postgres e subir tudo)
+    ```bash
+    docker-compose up --build
+    ```
+    *(Use `docker-compose up -d --build` para rodar em segundo plano)*.
+
+4.  **Acesse os serviços:**
+    -   **API (Testar no Postman):** `http://localhost:8080/`
+    -   **PgAdmin (Ver o Banco):** `http://localhost:5050`
+        (Email: `admin@admin.com`, Senha: `admin`)
+        (Host do Servidor no PgAdmin: `db`)
+
+### 💧 Limpar o Ambiente
 ```bash
-git clone https://github.com/fernandosantos01/mini-rede-social.git
-cd mini-rede-social
-mvn spring-boot:run
-```
-Acesse:
-👉 http://localhost:8080/
-
-
-
-## ⚙️ Configuração do Banco de Dados
-```bash
-spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/socialdb
-    username: postgres
-    password: sua_senha
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
-```
-
--------
+docker-compose down
 
 
 ## 🧪 Testes
@@ -181,14 +208,20 @@ Após iniciar o servidor, acesse:
 http://localhost:8080/swagger-ui.html
 ```
 
-## 🌱 Roadmap
-- CRUD de usuários e postagens
-- Autenticação JWT
-- Sistema de curtidas e comentários
-- Upload de imagens com AWS S3 (futuro)
-- Chat em tempo real com WebSocket
-- Feed personalizado
-- Deploy em ambiente cloud
+## 🌱 Roadmap (Próximos Passos)
+
+-   [x] CRUD de Usuário e Perfil (1:1)
+-   [x] Autenticação JWT (Stateless)
+-   [x] CRUD de Postagens com Upload (Supabase Storage)
+-   [x] CRUD de Curtidas (N:N)
+-   [x] CRUD de Comentários (com permissão)
+-   [x] Sistema de Seguir/Seguidores (N:N)
+-   [x] Feed Principal (`/feed`) com Paginação
+-   [x] Containerização com Docker Compose
+-   [x] Arquitetura Limpa (SOLID, DTOs, Mappers, GlobalExceptionHandler)
+-   [ ] **Testes de Integração** com `@SpringBootTest` e `@WithMockUser`
+-   [ ] Adicionar documentação com **Swagger/OpenAPI**
+-   [ ] Deploy em ambiente cloud (ex: AWS, Fly.io)
 
 ## 🧑‍💻 Autor
 José Fernando
@@ -196,6 +229,6 @@ Acadêmico de Ciência da Computação - UFPI
 Desenvolvedor Back-End | Java & Spring Boot
 Teresina - PI
 LinkedIn: https://www.linkedin.com/in/fernandosantos00
-E-mail: fernandosantos01@gmail.com
+E-mail: josefernandojosefernando.12@gmail.com
 
 Projeto desenvolvido com foco em aprendizado, boas práticas e escalabilidade.
