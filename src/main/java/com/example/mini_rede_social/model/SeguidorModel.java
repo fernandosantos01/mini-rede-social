@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -15,7 +13,8 @@ import java.util.UUID;
 @Table(name = "seguidores", uniqueConstraints = {
         @UniqueConstraint(columnNames = {"seguidor_id", "seguido_id"})
 })
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -30,7 +29,7 @@ public class SeguidorModel {
     private UsuarioModel seguidor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "seguido_id", nullable = false)
+    @JoinColumn(name = "seguido_id")
     private UsuarioModel seguido;
 
     @Column(nullable = false, updatable = false)

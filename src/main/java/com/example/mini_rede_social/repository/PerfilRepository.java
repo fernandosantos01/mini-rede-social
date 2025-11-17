@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface PerfilRepository extends JpaRepository<PerfilModel, UUID> {
     PerfilModel findByUsuario(UsuarioModel usuario);
+    void deleteByUsuarioId(UUID usuarioId);
 }

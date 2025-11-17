@@ -92,8 +92,11 @@ public class SupabaseStorageService {
             return;
         }
         try {
+            String finalPath = path;
             webClient.delete()
-                    .uri("/storage/v1/object/{bucket}/{path}", this.bucket, path)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/storage/v1/object/{bucket}/{path}")
+                            .build(this.bucket, finalPath))
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + this.supabaseKey)
                     .retrieve()
                     .bodyToMono(Void.class)

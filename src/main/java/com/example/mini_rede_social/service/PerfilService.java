@@ -3,6 +3,7 @@ package com.example.mini_rede_social.service;
 import com.example.mini_rede_social.dto.PerfilAtualizacaoDTO;
 import com.example.mini_rede_social.dto.PerfilResponseDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
+import com.example.mini_rede_social.mapper.PerfilMapper;
 import com.example.mini_rede_social.model.PerfilModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.PerfilRepository;
@@ -11,14 +12,20 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 @Service
 public class PerfilService {
     private final PerfilRepository perfilRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PerfilMapper perfilMapper;
 
-    public PerfilService(PerfilRepository perfilRepository, UsuarioRepository usuarioRepository) {
+    public PerfilService(PerfilRepository perfilRepository, UsuarioRepository usuarioRepository, PerfilMapper perfilMapper) {
         this.perfilRepository = perfilRepository;
         this.usuarioRepository = usuarioRepository;
+        this.perfilMapper = perfilMapper;
     }
 
     private PerfilModel getPerfilDoUsuarioLogado() {
@@ -37,6 +44,10 @@ public class PerfilService {
 
         return converterPerfilParaDTO(perfilRepository.findById(usuario.getId())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil não encontrado " + username)));
+    }
+
+    public void salvarPerfil(PerfilModel perfil) {
+        perfilRepository.save(perfil);
     }
 
     @Transactional
@@ -62,5 +73,24 @@ public class PerfilService {
                 perfil.getBio(),
                 perfil.getDataNascimento()
         );
+    }
+
+    @Transactional
+    public void deletarPerfilPorUsuarioId(UUID usuarioId) {
+        if (perfilRepository.existsById(usuarioId)) {
+            perfilRepository.deleteById(usuarioId);
+        }
+    }
+
+    public List<PerfilResponseDTO> buscarPerfisPorUsuarioIds(List<UUID> usuarioIds) {
+        List<PerfilModel> perfis = perfilRepository.findAllById(usuarioIds);
+        return perfis.stream()
+                .map(perfilMapper::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public PerfilModel buscarPerfilPorUsuarioId(UUID usuarioId) {
+        return perfilRepository.findById(usuarioId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Perfil não encontrado para o usuário: " + usuarioId));
     }
 }

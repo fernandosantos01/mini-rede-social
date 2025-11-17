@@ -7,8 +7,11 @@ import com.example.mini_rede_social.mapper.UsuarioMapper;
 import com.example.mini_rede_social.model.PerfilModel;
 import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.UsuarioRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,25 +24,40 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final UsuarioMapper usuarioMapper;
+    private final SeguidorService seguidorService;
+    private final CurtidaService curtidaService;
+    private final ComentarioService comentarioService;
+    private final PostagemService postagemService;
+    private final PerfilService perfilService;
 
-    public UsuarioService(UsuarioRepository usuarioRepository, UsuarioMapper usuarioMapper) {
+    @PersistenceContext
+    private EntityManager entityManager;
+
+    public UsuarioService(UsuarioRepository usuarioRepository, UsuarioMapper usuarioMapper, @Lazy SeguidorService seguidorService, @Lazy CurtidaService curtidaService, @Lazy ComentarioService comentarioService, @Lazy PostagemService postagemService, @Lazy PerfilService perfilService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = new BCryptPasswordEncoder();
         this.usuarioMapper = usuarioMapper;
+        this.seguidorService = seguidorService;
+        this.curtidaService = curtidaService;
+        this.comentarioService = comentarioService;
+        this.postagemService = postagemService;
+        this.perfilService = perfilService;
     }
 
     @Transactional
     public UsuarioResponseDTO salvarUsuario(RegistroCompletoDTO dto) {
         String senhaCriptografada = passwordEncoder.encode(dto.password());
-        var usuarioModel = new UsuarioModel();
-        var perfilModel = new PerfilModel();
-        BeanUtils.copyProperties(dto, usuarioModel);
-        BeanUtils.copyProperties(dto, perfilModel);
+
+        UsuarioModel usuarioModel = usuarioMapper.toUsuarioModel(dto);
         usuarioModel.setPassword(senhaCriptografada);
-        usuarioModel.setPerfil(perfilModel);
-        perfilModel.setUsuario(usuarioModel);
         UsuarioModel usuarioSalvo = usuarioRepository.save(usuarioModel);
-        return usuarioMapper.toResponseDTO(usuarioSalvo);
+
+        PerfilModel perfilModel = usuarioMapper.toPerfilModel(dto);
+        perfilModel.setUsuario(usuarioSalvo);
+
+        perfilService.salvarPerfil(perfilModel);
+
+        return usuarioMapper.toResponseDTO(usuarioSalvo, perfilModel);
     }
 
     public List<UsuarioModel> listarTodosUsuarios() {
@@ -58,7 +76,26 @@ public class UsuarioService {
     }
 
     @Transactional
-    public void deletarUsuario(UsuarioModel usuarioModel) {
-        usuarioRepository.delete(usuarioModel);
+    public void deletarMinhaContaLogada() {
+        UsuarioModel usuarioLogado = getUsuarioLogado();
+        UUID usuarioId = usuarioLogado.getId();
+
+        seguidorService.deletarTodasRelacoesDoUsuario(usuarioId);
+        curtidaService.deletarCurtidasPorUsuarioId(usuarioId);
+        comentarioService.deletarUsuarioDaPostagem(usuarioId);
+        postagemService.deletarTodasAsPostagensDoUsuario(usuarioId);
+        perfilService.deletarPerfilPorUsuarioId(usuarioId);
+        entityManager.flush();
+        entityManager.clear();
+
+        if (!usuarioRepository.existsById(usuarioId)) {
+            throw new RecursoNaoEncontradoException("Usuário não encontrado para deleção final.");
+        }
+        usuarioRepository.deleteById(usuarioId);
+    }
+
+    private UsuarioModel getUsuarioLogado() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return buscarPorUsername(username);
     }
 }

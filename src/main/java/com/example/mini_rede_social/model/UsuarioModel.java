@@ -4,15 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.UUID;
 
 @Entity
 @Table(name = "usuarios")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -22,8 +21,8 @@ public class UsuarioModel {
     @GeneratedValue
     private UUID id;
 
-    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL)
-    private PerfilModel perfil;
+//    @OneToOne(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private PerfilModel perfil;
 
     @Column(unique = true, nullable = false, length = 20)
     private String username;

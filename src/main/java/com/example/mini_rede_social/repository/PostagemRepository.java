@@ -13,4 +13,6 @@ public interface PostagemRepository extends JpaRepository<PostagemModel, UUID> {
     Page<PostagemModel>findByUsuarioIdIn(List<UUID> idsDosAutores, Pageable pageable);
 
     List<PostagemModel> findByUsuario(UsuarioModel usuarioModel);
+
+    List<PostagemModel> findByUsuarioId(UUID usuarioId);
 }
