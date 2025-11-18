@@ -34,4 +34,4 @@ build/
 
 # Ignora arquivos de ambiente
 .env
-application.properties
+!**/src/main/resources/application.properties
