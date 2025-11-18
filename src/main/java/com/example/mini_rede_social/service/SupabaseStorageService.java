@@ -72,18 +72,22 @@ public class SupabaseStorageService {
     }
 
     public void deletarImagem(String fullPublicUrl) {
+
+        // 1. Validação da URL
         if (fullPublicUrl == null || fullPublicUrl.isBlank()) {
             System.err.println("URL da imagem está nula ou vazia. Pulando deleção no Storage.");
             return;
         }
+
+        // 2. Extrair o "caminho" (key) da URL
         String path;
         try {
-            // Monta o prefixo da URL pública para sabermos o que remover
             String searchPrefix = this.supabaseUrl + "/storage/v1/object/public/" + this.bucket + "/";
 
             if (!fullPublicUrl.startsWith(searchPrefix)) {
                 throw new IllegalArgumentException("URL não pertence ao bucket configurado: " + fullPublicUrl);
             }
+
             path = fullPublicUrl.substring(searchPrefix.length());
             path = URLDecoder.decode(path, StandardCharsets.UTF_8);
 
@@ -91,18 +95,32 @@ public class SupabaseStorageService {
             System.err.println("Falha ao extrair o caminho da URL do Supabase: " + fullPublicUrl + " | Erro: " + e.getMessage());
             return;
         }
+
+        // 3. ⭐️ A CORREÇÃO (USANDO UriBuilder) ⭐️
+        // Executar a chamada DELETE
         try {
+            String finalPath = path;
             webClient.delete()
-                    .uri("/storage/v1/object/{bucket}/{path}", this.bucket, path)
+                    // Diz ao WebClient para construir a URI usando o UriBuilder
+                    .uri(uriBuilder -> uriBuilder
+                            // 1. Define o template do caminho
+                            .path("/storage/v1/object/{bucket}/{path}")
+                            // 2. Constrói o template, expandindo as variáveis SEM
+                            //    codificar as barras (/) que estão DENTRO da var 'path'.
+                            .build(this.bucket, finalPath))
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + this.supabaseKey)
-                    .retrieve()
-                    .bodyToMono(Void.class)
-                    .block();
+                    .header("apikey", this.supabaseKey)// Autenticação
+                    .retrieve() // Espera a resposta
+                    .bodyToMono(Void.class) // Não esperamos corpo
+                    .block(); // Bloqueia até a operação completar
 
             System.out.println("Arquivo deletado com sucesso do Supabase: " + path);
 
         } catch (Exception e) {
             System.err.println("Falha ao deletar o arquivo no Supabase Storage: " + path + " | Erro: " + e.getMessage());
+            // Em produção, você talvez queira relançar a exceção para
+            // o @Transactional do UsuarioService fazer rollback,
+            // ou salvar isso num log de "arquivos órfãos".
         }
     }
 }

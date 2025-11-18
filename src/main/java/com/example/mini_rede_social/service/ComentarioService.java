@@ -75,4 +75,19 @@ public class ComentarioService {
         comentarioRepository.delete(comentario);
 
     }
+
+    @Transactional
+    public void deletarComentariosDaPostagem(UUID postagemId) {
+        comentarioRepository.deleteByPostagemId(postagemId);
+    }
+
+    @Transactional
+    public void deletarUsuarioDaPostagem(UUID usuarioId) {
+        comentarioRepository.deleteByUsuarioId(usuarioId);
+    }
+
+    @Transactional
+    public void deletarComentariosPorPostagemIdEmLote(List<UUID> postIds) {
+        comentarioRepository.deleteByPostagemIdIn(postIds);
+    }
 }

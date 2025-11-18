@@ -12,6 +12,7 @@ import com.example.mini_rede_social.model.UsuarioModel;
 import com.example.mini_rede_social.repository.PostagemRepository;
 import com.example.mini_rede_social.repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,13 +31,17 @@ public class PostagemService {
     private final PostagemMapper postagemMapper;
     private final SupabaseStorageService supabaseStorageService;
     private final SeguidorService seguidorService;
+    private final ComentarioService comentarioService;
+    private final CurtidaService curtidaService;
 
-    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService, PostagemMapper postagemMapper, SeguidorService seguidorService) {
+    public PostagemService(PostagemRepository postagemRepository, UsuarioRepository usuarioRepository, SupabaseStorageService supabaseStorageService, PostagemMapper postagemMapper, @Lazy SeguidorService seguidorService, @Lazy ComentarioService comentarioService, @Lazy CurtidaService curtidaService) {
         this.postagemRepository = postagemRepository;
         this.usuarioRepository = usuarioRepository;
         this.supabaseStorageService = supabaseStorageService;
         this.postagemMapper = postagemMapper;
         this.seguidorService = seguidorService;
+        this.comentarioService = comentarioService;
+        this.curtidaService = curtidaService;
     }
 
     @Transactional
@@ -107,11 +112,15 @@ public class PostagemService {
     public void deletarPostagem(UUID id) {
         PostagemModel postagemParaDeletar = verificarPermissaoEBusca(id);
 
+        comentarioService.deletarComentariosDaPostagem(id);
+
+        curtidaService.deletarCurtidasPorPostagemId(id);
+
+
         supabaseStorageService.deletarImagem(postagemParaDeletar.getConteudoUrl());
 
         postagemRepository.delete(postagemParaDeletar);
     }
-
 
     private PostagemModel verificarPermissaoEBusca(UUID postagemId) {
         String usernameLogado = SecurityContextHolder.getContext().getAuthentication().getName();
@@ -126,5 +135,36 @@ public class PostagemService {
 
     public Page<PostagemModel> buscarPostagensPorListaDeAutores(List<UUID> idsDosAutores, Pageable pageable) {
         return postagemRepository.findByUsuarioIdIn(idsDosAutores, pageable);
+    }
+
+    @Transactional
+    public void deletarTodasAsPostagensDoUsuario(UUID usuarioId) {
+
+        List<PostagemModel> postagens = postagemRepository.findByUsuarioId(usuarioId);
+
+        if (postagens.isEmpty()) {
+            return;
+        }
+        List<UUID> postIds = postagens.stream()
+                .map(PostagemModel::getId)
+                .collect(Collectors.toList());
+        List<String> urlsImagens = postagens.stream()
+                .map(PostagemModel::getConteudoUrl)
+                .toList();
+
+        comentarioService.deletarComentariosPorPostagemIdEmLote(postIds);
+        curtidaService.deletarCurtidasPorPostagemIdEmLote(postIds);
+        postagemRepository.deleteAllInBatch(postagens);
+
+        //DELEÇÃO DAS IMAGENS (A parte "lenta" que é inevitável)
+        // Isso é feito DEPOIS que o banco já foi limpo (a transação pode fechar)
+        // Idealmente, isso seria assíncrono (@Async), mas por enquanto:
+        for (String url : urlsImagens) {
+            try {
+                supabaseStorageService.deletarImagem(url);
+            } catch (Exception e) {
+                System.err.println("Falha ao deletar imagem órfã do Supabase: " + url);
+            }
+        }
     }
 }

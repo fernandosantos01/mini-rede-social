@@ -34,3 +34,4 @@ build/
 
 # Ignora arquivos de ambiente
 .env
+src/main/resources/application.properties

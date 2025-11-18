@@ -12,6 +12,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -50,9 +51,23 @@ public class CurtidaService {
     @Transactional
     public void descurtirPostagem(UUID postagemId) {
         UsuarioModel usuario = getUsuarioLogado();
-
         CurtidaModel curtidaParaDeletar = curtidaRepository.findByUsuarioIdAndPostagemId(usuario.getId(), postagemId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Curtida não encontrada. Você não curtiu esta postagem."));
         curtidaRepository.delete(curtidaParaDeletar);
+    }
+
+    @Transactional
+    public void deletarCurtidasPorPostagemId(UUID postagemId) {
+        curtidaRepository.deleteByPostagemId(postagemId);
+    }
+
+    @Transactional
+    public void deletarCurtidasPorUsuarioId(UUID usuarioId) {
+        curtidaRepository.deleteByUsuarioId(usuarioId);
+    }
+
+    @Transactional
+    public void deletarCurtidasPorPostagemIdEmLote(List<UUID> postIds) {
+        curtidaRepository.deleteByPostagemIdIn(postIds);
     }
 }
