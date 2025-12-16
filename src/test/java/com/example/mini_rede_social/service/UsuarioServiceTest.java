@@ -1,8 +1,5 @@
 package com.example.mini_rede_social.service;
 
-
-package com.example.mini_rede_social.service;
-
 import com.example.mini_rede_social.dto.RegistroCompletoDTO;
 import com.example.mini_rede_social.exception.RecursoNaoEncontradoException;
 import com.example.mini_rede_social.mapper.UsuarioMapper;
@@ -56,7 +53,7 @@ public class UsuarioServiceTest {
                 "novo_dev",
                 "novo@email.com",
                 "9999",
-                "senha123",
+                "senha_criptografada",
                 "Novo Desenvolvedor",
                 LocalDate.now(),
                 "Bio"
@@ -65,16 +62,16 @@ public class UsuarioServiceTest {
 
     @Test
     void testSalvarUsuario_deveCriptografarSenhaESalvarUsuario() {
-        // Implementar o teste unitário para o método salvarUsuario
-        // Verificar se a senha foi criptografada e se o usuário foi salvo corretamente
-        when(passwordEncoder.encode(registroCompletoDTO.password())).thenReturn("senha_criptografada");
-        when(usuarioMapper.toUsuarioModel(registroCompletoDTO)).thenReturn(usuarioModel);
-        when(usuarioRepository.save(usuarioModel)).thenReturn(usuarioModel);
+        String HASH_ESPERADO = "hash_falso_para_teste";
+        when(passwordEncoder.encode(registroCompletoDTO.password())).thenReturn(HASH_ESPERADO);
+        when(usuarioMapper.toUsuarioModel(any(RegistroCompletoDTO.class))).thenReturn(usuarioModel);
+        when(perfilService.salvarPerfil(any(PerfilModel.class))).thenReturn(any(PerfilModel.class));
 
+        perfilService.salvarPerfil(usuarioMapper.toPerfilModel(registroCompletoDTO));
         usuarioService.salvarUsuario(registroCompletoDTO);
 
         verify(usuarioRepository, times(1)).save(usuarioModel);
-        verify(passwordEncoder, times(1)).encode("senha123");
+        verify(passwordEncoder, times(1)).encode(registroCompletoDTO.password());
     }
 
     @Test

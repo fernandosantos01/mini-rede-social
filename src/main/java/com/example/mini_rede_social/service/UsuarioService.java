@@ -51,8 +51,8 @@ public class UsuarioService {
         UsuarioModel usuarioModel = usuarioMapper.toUsuarioModel(dto);
         usuarioModel.setPassword(senhaCriptografada);
         UsuarioModel usuarioSalvo = usuarioRepository.save(usuarioModel);
-
-        PerfilModel perfilModel = usuarioMapper.toPerfilModel(dto);
+        PerfilModel perfilModel = new PerfilModel();
+        usuarioMapper.toPerfilModel(dto);
         perfilModel.setUsuario(usuarioSalvo);
 
         perfilService.salvarPerfil(perfilModel);
