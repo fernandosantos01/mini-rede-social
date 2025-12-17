@@ -49,6 +49,16 @@ public class SupabaseStorageService {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Arquivo não pode ser vazio.");
         }
+        long maxSize = 5 * 1024 * 1024;
+        if (file.getSize() > maxSize) {
+            throw new IllegalArgumentException(
+                    String.format("Arquivo muito grande. Tamanho máximo: %d MB", maxSize / (1024 * 1024))
+            );
+        }
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Apenas arquivos de imagem são permitidos.");
+        }
         LOGGER.debug("Iniciando upload de imagem: {}", file.getOriginalFilename());
         String ext = "";
         String original = file.getOriginalFilename();
@@ -99,9 +109,6 @@ public class SupabaseStorageService {
             LOGGER.error("Falha ao extrair o caminho da URL do Supabase: {}", fullPublicUrl, e);
             return;
         }
-
-        // 3. ⭐️ A CORREÇÃO (USANDO UriBuilder) ⭐️
-        // Executar a chamada DELETE
         try {
             String finalPath = path;
             webClient.delete()
