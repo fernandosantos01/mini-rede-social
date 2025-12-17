@@ -1,5 +1,7 @@
 package com.example.mini_rede_social.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -14,15 +16,13 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.http.HttpHeaders;
-
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
 @Service
 public class SupabaseStorageService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(SupabaseStorageService.class);
     private final WebClient webClient;
     private final String supabaseUrl;
     private final String supabaseKey;
@@ -32,7 +32,7 @@ public class SupabaseStorageService {
                                   @Value("${supabase.url}") String supabaseUrl,
                                   @Value("${supabase.key}") String supabaseKey,
                                   @Value("${supabase.bucket}") String bucket
-        ) {
+    ) {
         this.supabaseUrl = supabaseUrl;
         this.supabaseKey = supabaseKey;
         this.bucket = bucket;
@@ -48,6 +48,7 @@ public class SupabaseStorageService {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Arquivo não pode ser vazio.");
         }
+        LOGGER.debug("Iniciando upload de imagem: {}", file.getOriginalFilename());
         String ext = "";
         String original = file.getOriginalFilename();
         if (original != null && original.contains(".")) {
@@ -68,14 +69,16 @@ public class SupabaseStorageService {
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
-        return this.supabaseUrl + "/storage/v1/object/public/" + this.bucket + "/" + path;
+        String publicUrl = this.supabaseUrl + "/storage/v1/object/public/" + this.bucket + "/" + path;
+        LOGGER.info("Upload concluído com sucesso: {}", path);
+        return publicUrl;
     }
 
     public void deletarImagem(String fullPublicUrl) {
 
         // 1. Validação da URL
         if (fullPublicUrl == null || fullPublicUrl.isBlank()) {
-            System.err.println("URL da imagem está nula ou vazia. Pulando deleção no Storage.");
+            LOGGER.warn("URL da imagem está nula ou vazia. Pulando deleção no Storage.");
             return;
         }
 
@@ -92,7 +95,7 @@ public class SupabaseStorageService {
             path = URLDecoder.decode(path, StandardCharsets.UTF_8);
 
         } catch (Exception e) {
-            System.err.println("Falha ao extrair o caminho da URL do Supabase: " + fullPublicUrl + " | Erro: " + e.getMessage());
+            LOGGER.error("Falha ao extrair o caminho da URL do Supabase: {}", fullPublicUrl, e);
             return;
         }
 
@@ -114,10 +117,10 @@ public class SupabaseStorageService {
                     .bodyToMono(Void.class) // Não esperamos corpo
                     .block(); // Bloqueia até a operação completar
 
-            System.out.println("Arquivo deletado com sucesso do Supabase: " + path);
+            LOGGER.info("Arquivo deletado com sucesso do Supabase: {}", path);
 
         } catch (Exception e) {
-            System.err.println("Falha ao deletar o arquivo no Supabase Storage: " + path + " | Erro: " + e.getMessage());
+            LOGGER.error("Falha ao deletar o arquivo no Supabase Storage: {}", path, e);
             // Em produção, você talvez queira relançar a exceção para
             // o @Transactional do UsuarioService fazer rollback,
             // ou salvar isso num log de "arquivos órfãos".
