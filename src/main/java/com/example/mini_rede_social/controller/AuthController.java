@@ -11,7 +11,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,13 +23,13 @@ import java.util.Map;
 public class AuthController {
     private final UsuarioService usuarioService;
     private final AuthenticationManager authenticationManager;
-    private final PerfilRepository perfilRepository;
+    private final JwtUtil jwtUtil;
 
     public AuthController(UsuarioService usuarioService,
-                          AuthenticationManager authenticationManager, PerfilRepository perfilRepository) {
+                          AuthenticationManager authenticationManager, JwtUtil jwtUtil, PerfilRepository perfilRepository) {
         this.usuarioService = usuarioService;
         this.authenticationManager = authenticationManager;
-        this.perfilRepository = perfilRepository;
+        this.jwtUtil = jwtUtil;
     }
 
     @PostMapping("/register")
@@ -48,7 +47,7 @@ public class AuthController {
                     new UsernamePasswordAuthenticationToken(username, password)
             );
             String authenticatedUsername = authentication.getName();
-            String token = JwtUtil.generateToken(authenticatedUsername);
+            String token = jwtUtil.generateToken(authenticatedUsername);
             return ResponseEntity.ok(Map.of("token", token));
 
         } catch (AuthenticationException e) {
