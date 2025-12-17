@@ -1,5 +1,6 @@
 package com.example.mini_rede_social.service;
 
+import com.example.mini_rede_social.exception.StorageException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -121,7 +122,7 @@ public class SupabaseStorageService {
 
         } catch (Exception e) {
             LOGGER.error("Falha ao deletar o arquivo no Supabase Storage: {}", path, e);
-            throw new RuntimeException("Erro crítico ao acessar Storage: " + e.getMessage(), e);
+            throw new StorageException("Falha de comunicação com o Supabase", e);
         }
     }
 }

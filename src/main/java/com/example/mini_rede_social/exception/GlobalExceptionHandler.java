@@ -90,4 +90,15 @@ public class GlobalExceptionHandler {
         body.put("message", "Falha ao processar o arquivo: " + ex.getMessage());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+
+    @ExceptionHandler(StorageException.class)
+    public ResponseEntity<Object> handleStorageException(StorageException ex) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", LocalDateTime.now());
+        body.put("status", HttpStatus.BAD_GATEWAY.value()); // 502
+        body.put("error", "Erro no Armazenamento");
+        body.put("message", "Falha ao processar imagem no servidor externo. Tente novamente.");
+
+        return new ResponseEntity<>(body, HttpStatus.BAD_GATEWAY);
+    }
 }
