@@ -121,9 +121,7 @@ public class SupabaseStorageService {
 
         } catch (Exception e) {
             LOGGER.error("Falha ao deletar o arquivo no Supabase Storage: {}", path, e);
-            // Em produção, você talvez queira relançar a exceção para
-            // o @Transactional do UsuarioService fazer rollback,
-            // ou salvar isso num log de "arquivos órfãos".
+            throw new RuntimeException("Erro crítico ao acessar Storage: " + e.getMessage(), e);
         }
     }
 }
